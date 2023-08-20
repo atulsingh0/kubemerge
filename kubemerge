@@ -5,7 +5,6 @@
 IFS=$'\n\t'
 
 usage() {
-    local SELF
     SELF="kubemerge"
 
     cat <<EOF
@@ -16,17 +15,25 @@ EOF
 
 merge_config() {
 
-    export KUBECONFIG=~/.kube/config
+    export KUBECONFIG="${HOME}/.kube/config"
 
-    mv ${KUBECONFIG} ${KUBECONFIG}.bak 2>/dev/null
+    if [ -f "${KUBECONFIG}" ]; then
+        echo "Creating backup of existing kubeconfig file"
+        mv "${KUBECONFIG}" "${KUBECONFIG}".bak 2>/dev/null
+    fi
 
     for i in "${@}"; do
-        KUBECONFIG = ${KUBECONFIG}:${i}
+        if [ -f "${i}" ]; then  
+            echo "+++  Processing ${i}"
+            KUBECONFIG=${KUBECONFIG}:${i}
+        else 
+            echo "---> Config ${i} does not exists hence skipping"
+        fi
     done
 
-    KUBECONFIG=$KUBECONFIG kubectl config view --flatten >~/.kube/config
+    KUBECONFIG=${KUBECONFIG} kubectl config view --flatten >${HOME}/.kube/config
 
-    echo "Kubeconfig files are merged -  ~/.kube/config"
+    echo "Kubeconfig files are merged and available at ${HOME}/.kube/config"
 }
 
 main() {
